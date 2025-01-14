@@ -93,7 +93,7 @@ def loop_body(opts, gstate):
         data = data["dish_status"]
 
         raw_dish_status_msg = "starlink_dish_status "
-        raw_dish_alerts_msg = "starlink_dish_status "
+        raw_dish_alerts_msg = "starlink_dish_alerts "
         for key in data.keys():
             value = data[key]
             value_type = type(value).__name__
@@ -112,8 +112,8 @@ def loop_body(opts, gstate):
 
         raw_dish_status_msg += str(int(time.time() * 1000.0 * 1000.0))
         raw_dish_alerts_msg += str(int(time.time() * 1000.0 * 1000.0))
-        print(raw_dish_status_msg)
-        print(raw_dish_alerts_msg)
+        #print(raw_dish_status_msg)
+        #print(raw_dish_alerts_msg)
         sock.sendto((raw_dish_status_msg).encode(), (target_udp_host, target_udp_port))
         sock.sendto((raw_dish_alerts_msg).encode(), (target_udp_host, target_udp_port))
 
