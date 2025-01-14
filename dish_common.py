@@ -94,7 +94,7 @@ def create_arg_parser(output_description, bulk_history=True):
     return parser
 
 
-def run_arg_parser(parser, need_id=False, no_stdout_errors=False, modes=None):
+def run_arg_parser(parser, need_id=False, no_stdout_errors=True, modes=None):
     """Run parse_args on a parser previously created with create_arg_parser
 
     Args:
@@ -156,9 +156,11 @@ def conn_error(opts, msg, *args):
     # Connection errors that happen in an interval loop are not critical
     # failures, but are interesting enough to print in non-verbose mode.
     if opts.loop_interval > 0.0 and not opts.no_stdout_errors:
-        print(msg % args)
+        #print(msg % args)
+        pass
     else:
-        logging.error(msg, *args)
+        #logging.error(msg, *args)
+        pass
 
 
 class GlobalState:
