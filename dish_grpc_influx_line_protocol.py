@@ -79,6 +79,7 @@ def loop_body(opts, gstate):
     if (rc == 1):
         data["online"] = False
         # Error
+        return rc
     else:
         data["online"] = True
 
