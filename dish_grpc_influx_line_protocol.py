@@ -107,7 +107,7 @@ def loop_body(opts, gstate):
                 value = "{}i".format(value)
             if (value_type == "list"):
                 continue
-            if (value_type == "list"):
+            if (value_type == "str"):
                 value = "\"{}\"".format(value)
             data[key] = value
 
