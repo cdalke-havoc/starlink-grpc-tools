@@ -98,6 +98,9 @@ def loop_body(opts, gstate):
             value = data[key]
             value_type = type(value).__name__
 
+            if (value is None):
+                continue
+
             if (value_type == "bool"):
                value = "true" if value else "false"
             if (value_type == "int"):
