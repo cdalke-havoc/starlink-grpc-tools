@@ -23,6 +23,7 @@ import os
 import signal
 import sys
 import time
+import socket
 
 try:
     import ssl
@@ -33,6 +34,11 @@ except ImportError:
 import dish_common
 
 HOST_DEFAULT = "127.0.0.1"
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+target_udp_host = "127.0.0.1"
+target_udp_port = 8094
 
 class Terminated(Exception):
     pass
@@ -46,13 +52,6 @@ def handle_sigterm(signum, frame):
 def parse_args():
     parser = dish_common.create_arg_parser(output_description="publish data to InfluxDB Line protocol (UDP)",
                                            bulk_history=False)
-
-    group = parser.add_argument_group(title="UDP output options")
-    group.add_argument("-n",
-                       "--hostname",
-                       default=HOST_DEFAULT,
-                       help="Target hostname, default: " + HOST_DEFAULT)
-    group.add_argument("-p", "--port", type=int, help="Port number to output UDP on")
 
     opts = dish_common.run_arg_parser(parser, need_id=True, no_stdout_errors=True)
     return opts
@@ -115,6 +114,9 @@ def loop_body(opts, gstate):
         raw_dish_alerts_msg += str(int(time.time() * 1000.0 * 1000.0))
         print(raw_dish_status_msg)
         print(raw_dish_alerts_msg)
+        sock.sendto((raw_dish_status_msg).encode(), (target_udp_host, target_udp_port))
+        sock.sendto((raw_dish_alerts_msg).encode(), (target_udp_host, target_udp_port))
+
     else:
         pass
 
