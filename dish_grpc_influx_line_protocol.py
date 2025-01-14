@@ -97,10 +97,15 @@ def loop_body(opts, gstate):
         for key in data.keys():
             value = data[key]
             value_type = type(value).__name__
+
             if (value_type == "bool"):
-                value = 1 if value else 0
+               value = "true" if value else "false"
+            if (value_type == "int"):
+                value = "{}i".format(value)
             if (value_type == "list"):
                 continue
+            if (value_type == "list"):
+                value = "\"{}\"".format(value)
             data[key] = value
 
             if key.startswith("alert_"):
