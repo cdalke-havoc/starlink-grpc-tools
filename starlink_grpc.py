@@ -405,15 +405,15 @@ from typing_extensions import TypedDict, get_args
 import grpc
 
 try:
-    from yagrc import importer
-    importer.add_lazy_packages(["spacex.api.device"])
+    from yagrc import importer, reflector
+    importer.add_lazy_packages(["spacex_api.device"])
     imports_pending = True
 except (ImportError, AttributeError):
     imports_pending = False
 
-from spacex.api.device import device_pb2
-from spacex.api.device import device_pb2_grpc
-from spacex.api.device import dish_pb2
+from spacex_api.device import device_pb2
+from spacex_api.device import device_pb2_grpc
+from spacex_api.device import dish_pb2
 
 # Max wait time for gRPC request completion, in seconds. This is just to
 # prevent hang if the connection goes dead without closing.
@@ -569,7 +569,19 @@ def _field_types(hint_type):
 
 
 def resolve_imports(channel: grpc.Channel):
-    importer.resolve_lazy_imports(channel)
+    try:
+        importer.resolve_lazy_imports(channel)
+    except reflector.ServiceError:
+        # "temporary" backwards compatibility hack: try old package name
+        bchack_importer = importer.GrpcImporter()
+        bchack_importer.configure(channel, filenames=["spacex/api/device/device.proto", "spacex/api/device/dish.proto"])
+        global device_pb2
+        global device_pb2_grpc
+        global dish_pb2
+        from spacex.api.device import device_pb2
+        from spacex.api.device import device_pb2_grpc
+        from spacex.api.device import dish_pb2
+        # end backwards compatibility hack
     global imports_pending
     imports_pending = False
 
@@ -769,33 +781,10 @@ def status_data(
     Raises:
         GrpcError: Failed getting status info from the Starlink user terminal.
     """
-    if context is None:
-        context = ChannelContext()
-        context_created = True
-    else:
-        context_created = False
-
     try:
         status = get_status(context)
-        history = get_history(context)
     except (AttributeError, ValueError, grpc.RpcError) as e:
         raise GrpcError(e) from e
-    finally:
-        if context_created:
-            context.close()
-
-    # Latency info in status response appears to be broken, not sure about
-    # ping drop info, so get those from history response instead
-    pop_ping_drop_rate = None
-    pop_ping_latency_ms = None
-    latest_range = _compute_sample_range(history, 1)[0]
-    for latest_index in latest_range:
-        pop_ping_drop_rate = history.pop_ping_drop_rate[latest_index]
-        try:
-            pop_ping_latency_ms = history.pop_ping_latency_ms[latest_index]
-        except (AttributeError, IndexError, TypeError):
-            pass
-        break
 
     try:
         if status.HasField("outage"):
@@ -851,10 +840,10 @@ def status_data(
         "uptime": getattr(getattr(status, "device_state", None), "uptime_s", None),
         "snr": None,  # obsoleted in grpc service
         "seconds_to_first_nonempty_slot": getattr(status, "seconds_to_first_nonempty_slot", None),
-        "pop_ping_drop_rate": pop_ping_drop_rate,
+        "pop_ping_drop_rate": getattr(status, "pop_ping_drop_rate", None),
         "downlink_throughput_bps": getattr(status, "downlink_throughput_bps", None),
         "uplink_throughput_bps": getattr(status, "uplink_throughput_bps", None),
-        "pop_ping_latency_ms": pop_ping_latency_ms,
+        "pop_ping_latency_ms": getattr(status, "pop_ping_latency_ms", None),
         "alerts": alert_bits,
         "fraction_obstructed": getattr(obstruction_stats, "fraction_obstructed", None),
         "currently_obstructed": getattr(obstruction_stats, "currently_obstructed", None),
